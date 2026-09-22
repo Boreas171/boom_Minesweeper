@@ -1,4 +1,6 @@
 node_modules/
 dist/
+.idea
 *.local
 .DS_Store
+扫雷游戏设计文档.md
