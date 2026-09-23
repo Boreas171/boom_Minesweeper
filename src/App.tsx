@@ -1,20 +1,34 @@
 import { useEffect, useState } from 'react'
 import { Board } from './components/Board'
 import { GameHeader } from './components/GameHeader'
-import { DEFAULT_DIFFICULTY } from './game/constants'
+import { LeaderboardDialog } from './components/LeaderboardDialog'
+import { WinDialog } from './components/WinDialog'
+import { DEFAULT_DIFFICULTY, DIFFICULTIES } from './game/constants'
 import { createEmptyBoard, placeMines } from './game/board'
+import {
+  addLeaderboardEntry,
+  getLeaderboard,
+  type LeaderboardEntry,
+} from './game/leaderboard'
 import { revealAllMines, revealCells, toggleFlag } from './game/reveal'
-import type { Board as BoardModel, GameStatus } from './game/types'
+import type { Board as BoardModel, DifficultyKey, GameStatus } from './game/types'
 import { getRemainingMines, hasWon } from './game/victory'
 
-function createNewGame(): BoardModel {
-  return createEmptyBoard(DEFAULT_DIFFICULTY)
+type Dialog = 'none' | 'win' | 'leaderboard'
+
+function createNewGame(difficulty: DifficultyKey): BoardModel {
+  return createEmptyBoard(DIFFICULTIES[difficulty])
 }
 
 function App() {
-  const [board, setBoard] = useState<BoardModel>(createNewGame)
+  const [difficulty, setDifficulty] = useState<DifficultyKey>(DEFAULT_DIFFICULTY_KEY)
+  const [board, setBoard] = useState<BoardModel>(() => createNewGame(DEFAULT_DIFFICULTY.key))
   const [status, setStatus] = useState<GameStatus>('ready')
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [dialog, setDialog] = useState<Dialog>('none')
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null)
+  const [hasSavedCurrentWin, setHasSavedCurrentWin] = useState(false)
 
   useEffect(() => {
     if (status !== 'playing') {
@@ -29,9 +43,20 @@ function App() {
   }, [status])
 
   const handleRestart = () => {
-    setBoard(createNewGame())
+    setBoard(createNewGame(difficulty))
     setStatus('ready')
     setElapsedSeconds(0)
+    setDialog('none')
+    setHasSavedCurrentWin(false)
+  }
+
+  const handleDifficultyChange = (nextDifficulty: DifficultyKey) => {
+    setDifficulty(nextDifficulty)
+    setBoard(createNewGame(nextDifficulty))
+    setStatus('ready')
+    setElapsedSeconds(0)
+    setDialog('none')
+    setHasSavedCurrentWin(false)
   }
 
   const handleReveal = (row: number, col: number) => {
@@ -44,9 +69,10 @@ function App() {
       return
     }
 
+    const activeDifficulty = DIFFICULTIES[difficulty]
     let boardToReveal = board
     if (status === 'ready') {
-      boardToReveal = placeMines(board, DEFAULT_DIFFICULTY, row, col)
+      boardToReveal = placeMines(board, activeDifficulty, row, col)
     }
 
     if (boardToReveal[row][col].hasMine) {
@@ -56,8 +82,13 @@ function App() {
     }
 
     const nextBoard = revealCells(boardToReveal, row, col)
+    const won = hasWon(nextBoard)
     setBoard(nextBoard)
-    setStatus(hasWon(nextBoard) ? 'won' : 'playing')
+    setStatus(won ? 'won' : 'playing')
+
+    if (won) {
+      setDialog('win')
+    }
   }
 
   const handleToggleFlag = (row: number, col: number) => {
@@ -68,17 +99,47 @@ function App() {
     setBoard((currentBoard) => toggleFlag(currentBoard, row, col))
   }
 
-  const remainingMines = getRemainingMines(board, DEFAULT_DIFFICULTY.mines)
+  const handleShowLeaderboard = async () => {
+    setDialog('leaderboard')
+    setLeaderboardError(null)
+
+    try {
+      setLeaderboard(await getLeaderboard())
+    } catch (error) {
+      setLeaderboard([])
+      setLeaderboardError(error instanceof Error ? error.message : '排行榜读取失败。')
+    }
+  }
+
+  const handleSaveWin = async () => {
+    if (hasSavedCurrentWin) {
+      return
+    }
+
+    try {
+      await addLeaderboardEntry(elapsedSeconds, difficulty)
+      setLeaderboard(await getLeaderboard())
+      setHasSavedCurrentWin(true)
+    } catch (error) {
+      setLeaderboardError(error instanceof Error ? error.message : '排行榜保存失败。')
+    }
+  }
+
+  const activeDifficulty = DIFFICULTIES[difficulty]
+  const remainingMines = getRemainingMines(board, activeDifficulty.mines)
 
   return (
     <main className="game-page">
       <div className="game-frame">
         <GameHeader
+          difficulty={difficulty}
           remainingMines={remainingMines}
-          totalMines={DEFAULT_DIFFICULTY.mines}
+          totalMines={activeDifficulty.mines}
           elapsedSeconds={elapsedSeconds}
           status={status}
           onRestart={handleRestart}
+          onShowLeaderboard={handleShowLeaderboard}
+          onDifficultyChange={handleDifficultyChange}
         />
 
         <Board
@@ -89,12 +150,30 @@ function App() {
         />
 
         <footer className="game-footer">
-          <span>9 x 9 棋盘</span>
-          <span>共 10 枚地雷</span>
+          <span>{activeDifficulty.label} {activeDifficulty.rows} x {activeDifficulty.cols} 棋盘</span>
+          <span>共 {activeDifficulty.mines} 枚地雷</span>
         </footer>
       </div>
+
+      {dialog === 'win' && (
+        <WinDialog
+          elapsedSeconds={elapsedSeconds}
+          hasSaved={hasSavedCurrentWin}
+          onRestart={handleRestart}
+          onSave={handleSaveWin}
+        />
+      )}
+      {dialog === 'leaderboard' && (
+        <LeaderboardDialog
+          entries={leaderboard}
+          error={leaderboardError}
+          onClose={() => setDialog('none')}
+        />
+      )}
     </main>
   )
 }
+
+const DEFAULT_DIFFICULTY_KEY: DifficultyKey = DEFAULT_DIFFICULTY.key
 
 export default App
