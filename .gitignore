@@ -3,4 +3,8 @@ dist/
 .idea/
 *.local
 .DS_Store
+
+# 运行时数据：个人成绩与设置，不入库；目录本身保留（见 data/.gitkeep）
+data/*.json
+
 扫雷游戏设计文档.md

@@ -1,4 +1,3 @@
-import type { ChangeEvent } from 'react'
 import { DIFFICULTIES } from '../game/constants'
 import { formatElapsedTime } from '../game/leaderboard'
 import type { DifficultyKey, GameStatus } from '../game/types'
@@ -18,7 +17,7 @@ type GameHeaderProps = {
   status: GameStatus
   onRestart: () => void
   onShowLeaderboard: () => void
-  onDifficultyChange: (difficulty: DifficultyKey) => void
+  onShowSettings: () => void
 }
 
 export function GameHeader({
@@ -29,33 +28,23 @@ export function GameHeader({
   status,
   onRestart,
   onShowLeaderboard,
-  onDifficultyChange,
+  onShowSettings,
 }: GameHeaderProps) {
-  const handleDifficultyChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    onDifficultyChange(event.target.value as DifficultyKey)
-  }
-
   return (
     <header className="game-header">
       <div className="brand-lockup">
-        <span className="brand-kicker">MINESWEEPER</span>
+        <span className="brand-kicker">
+          MINESWEEPER / {DIFFICULTIES[difficulty].label}
+        </span>
         <h1>扫雷</h1>
       </div>
 
       <div className="status-strip" aria-live="polite">
-        <label className="stat difficulty-select">
-          <span className="stat-label">难度</span>
-          <select value={difficulty} onChange={handleDifficultyChange} aria-label="选择游戏难度">
-            {Object.values(DIFFICULTIES).map((option) => (
-              <option key={option.key} value={option.key}>
-                {option.label} {option.rows} x {option.cols} / {option.mines} 雷
-              </option>
-            ))}
-          </select>
-        </label>
         <div className="stat">
           <span className="stat-label">剩余雷数 / 总数</span>
-          <strong className="stat-value">{String(remainingMines).padStart(2, '0')} / {totalMines}</strong>
+          <strong className="stat-value">
+            {String(remainingMines).padStart(2, '0')} / {totalMines}
+          </strong>
         </div>
         <div className="stat">
           <span className="stat-label">用时</span>
@@ -68,6 +57,9 @@ export function GameHeader({
       </div>
 
       <div className="header-actions">
+        <button className="header-button" type="button" onClick={onShowSettings}>
+          设置
+        </button>
         <button className="header-button" type="button" onClick={onShowLeaderboard}>
           查看排行榜
         </button>

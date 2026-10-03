@@ -9,13 +9,18 @@ type CellProps = {
 
 function getCellLabel(cell: CellModel): string {
   const position = `第 ${cell.row + 1} 行，第 ${cell.col + 1} 列`
+  const detectedNote = cell.detected && !cell.revealed ? '，技能已探明是地雷' : ''
 
-  if (cell.flagged && !cell.revealed) {
-    return `${position}，已标记`
-  }
   if (!cell.revealed) {
+    if (cell.flagged) {
+      return `${position}，已标记${detectedNote}`
+    }
+    if (cell.detected) {
+      return `${position}，技能已探明是地雷`
+    }
     return `${position}，未翻开`
   }
+
   if (cell.hasMine) {
     return `${position}，地雷`
   }
@@ -26,10 +31,12 @@ function getCellLabel(cell: CellModel): string {
 }
 
 export function Cell({ cell, onReveal, onToggleFlag }: CellProps) {
+  const showDetected = cell.detected && !cell.revealed
   const classNames = [
     'cell',
     cell.revealed ? 'cell--revealed' : 'cell--hidden',
     cell.flagged ? 'cell--flagged' : '',
+    showDetected ? 'cell--detected' : '',
     cell.revealed && cell.hasMine ? 'cell--mine' : '',
   ]
 
@@ -49,6 +56,12 @@ export function Cell({ cell, onReveal, onToggleFlag }: CellProps) {
     >
       {!cell.revealed && cell.flagged && (
         <span className="cell-symbol cell-symbol--flag" aria-hidden="true">⚑</span>
+      )}
+      {!cell.revealed && !cell.flagged && showDetected && (
+        <span className="cell-symbol cell-symbol--detected" aria-hidden="true">◎</span>
+      )}
+      {!cell.revealed && cell.flagged && showDetected && (
+        <span className="cell-badge" aria-hidden="true" />
       )}
       {cell.revealed && cell.hasMine && (
         <span className="cell-symbol cell-symbol--mine" aria-hidden="true">✹</span>

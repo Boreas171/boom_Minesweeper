@@ -10,6 +10,7 @@ export function createEmptyBoard({ rows, cols }: Difficulty): Board {
       adjacentMines: 0,
       revealed: false,
       flagged: false,
+      detected: false,
     })),
   )
 }

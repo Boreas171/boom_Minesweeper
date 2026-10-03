@@ -7,8 +7,13 @@ const port = Number(process.env.PORT ?? 3001)
 const rootDirectory = process.cwd()
 const dataDirectory = join(rootDirectory, 'data')
 const leaderboardPath = join(dataDirectory, 'leaderboard.json')
+const settingsPath = join(dataDirectory, 'settings.json')
 const distDirectory = join(rootDirectory, 'dist')
 const maxRequestBodySize = 16 * 1024
+const difficultyKeys = ['easy', 'normal', 'hard']
+const defaultSettings = { difficulty: 'easy', skillUsesPerGame: 1 }
+const minSkillUses = 0
+const maxSkillUses = 5
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -88,8 +93,39 @@ function isLeaderboardRequest(payload) {
     typeof payload === 'object' &&
     Number.isInteger(payload.elapsedSeconds) &&
     payload.elapsedSeconds >= 0 &&
-    ['easy', 'normal', 'hard'].includes(payload.difficulty)
+    difficultyKeys.includes(payload.difficulty)
   )
+}
+
+function normalizeSettings(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return defaultSettings
+  }
+
+  const difficulty = difficultyKeys.includes(payload.difficulty)
+    ? payload.difficulty
+    : defaultSettings.difficulty
+  const skillUsesPerGame = Number.isInteger(payload.skillUsesPerGame)
+    ? Math.min(maxSkillUses, Math.max(minSkillUses, payload.skillUsesPerGame))
+    : defaultSettings.skillUsesPerGame
+
+  return { difficulty, skillUsesPerGame }
+}
+
+async function readSettings() {
+  try {
+    return normalizeSettings(JSON.parse(await readFile(settingsPath, 'utf8')))
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return defaultSettings
+    }
+    throw error
+  }
+}
+
+async function writeSettings(settings) {
+  await mkdir(dataDirectory, { recursive: true })
+  await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8')
 }
 
 async function serveStaticFile(requestPath, response) {
@@ -142,6 +178,31 @@ const server = createServer(async (request, response) => {
       return
     }
 
+    if (url.pathname === '/api/settings' && request.method === 'GET') {
+      sendJson(response, 200, await readSettings())
+      return
+    }
+
+    if (url.pathname === '/api/settings' && request.method === 'PUT') {
+      const payload = JSON.parse(await readRequestBody(request))
+      if (
+        !payload ||
+        typeof payload !== 'object' ||
+        !difficultyKeys.includes(payload.difficulty) ||
+        !Number.isInteger(payload.skillUsesPerGame) ||
+        payload.skillUsesPerGame < minSkillUses ||
+        payload.skillUsesPerGame > maxSkillUses
+      ) {
+        sendJson(response, 400, { message: '设置数据无效。' })
+        return
+      }
+
+      const settings = normalizeSettings(payload)
+      await writeSettings(settings)
+      sendJson(response, 200, settings)
+      return
+    }
+
     if (!existsSync(distDirectory)) {
       sendJson(response, 503, { message: '尚未构建前端文件，请先执行 npm run build。' })
       return
@@ -155,5 +216,5 @@ const server = createServer(async (request, response) => {
 })
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`排行榜与生产服务已启动：http://127.0.0.1:${port}`)
+  console.log(`排行榜 / 设置 / 静态服务已启动：http://127.0.0.1:${port}`)
 })

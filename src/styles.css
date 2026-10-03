@@ -14,6 +14,7 @@
   --yellow: #d99f2b;
   --blue: #2d6ca3;
   --green: #37835b;
+  --amber: #c98a14;
 }
 
 * {
@@ -78,7 +79,7 @@ h1 {
 .status-strip {
   display: grid;
   flex: 1 1 auto;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -98,26 +99,6 @@ h1 {
 
 .stat--lost {
   border-color: var(--coral);
-}
-
-.difficulty-select {
-  display: grid;
-  gap: 5px;
-}
-
-.difficulty-select select {
-  width: 100%;
-  min-width: 0;
-  height: 27px;
-  padding: 0 22px 0 0;
-  border: 0;
-  border-radius: 0;
-  color: var(--ink);
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .stat-label {
@@ -229,6 +210,34 @@ h1 {
   border-color: rgba(198, 90, 76, 0.44);
 }
 
+.board-area--armed {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(201, 138, 20, 0.16), 0 14px 30px rgba(31, 42, 46, 0.06);
+}
+
+.board-area--armed .cell--hidden {
+  cursor: crosshair;
+}
+
+.board-area--armed .cell--hidden:hover {
+  background: #f4e6c4;
+}
+
+.board-area--locked {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.notice {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(198, 90, 76, 0.4);
+  border-radius: 7px;
+  color: #8c4034;
+  background: #fdf3f1;
+  font-size: 12px;
+}
+
 .board {
   display: grid;
   align-content: center;
@@ -272,11 +281,6 @@ h1 {
   cursor: default;
   background: #f5f8f5;
   box-shadow: inset 0 0 0 1px #dce4e1;
-}
-
-.cell--flagged,
-.cell--flagged[data-number] {
-  color: #d83f3f;
 }
 
 .cell--flagged:hover {
@@ -328,6 +332,36 @@ h1 {
   color: #d83f3f;
 }
 
+/* 技能探明的雷：琥珀色标记，与旗帜（红）、踩雷（红底）区分开 */
+.cell--detected {
+  position: relative;
+  color: var(--amber);
+  background: #fbf2dc;
+  box-shadow: inset 0 0 0 2px rgba(201, 138, 20, 0.5);
+}
+
+.cell--detected:hover {
+  background: #f7ebcd;
+}
+
+.cell--detected.cell--flagged {
+  color: #d83f3f;
+}
+
+.cell-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+.cell-symbol--detected {
+  font-size: 19px;
+}
+
 .game-footer {
   display: flex;
   justify-content: space-between;
@@ -336,6 +370,224 @@ h1 {
   color: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+
+.skill-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.skill-card {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 260px;
+  padding: 12px 16px;
+  border: 1px solid #b9c9c4;
+  border-radius: 8px;
+  color: var(--ink);
+  background: var(--panel);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+
+.skill-card:hover:not(:disabled) {
+  border-color: var(--amber);
+  background: #ffffff;
+}
+
+.skill-card--armed {
+  border-color: var(--amber);
+  background: #fdf6e6;
+  box-shadow: 0 0 0 3px rgba(201, 138, 20, 0.18);
+}
+
+.skill-card--disabled,
+.skill-card:disabled {
+  color: var(--muted);
+  background: #eef1ef;
+  border-color: #d4ddda;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.72;
+}
+
+.skill-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  color: #ffffff;
+  background: var(--amber);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.skill-card--disabled .skill-icon {
+  background: #b3bfba;
+}
+
+.skill-text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.skill-name {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.skill-desc {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.skill-uses {
+  margin-left: auto;
+  padding-left: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 750;
+}
+
+.skill-card--disabled .skill-uses {
+  color: var(--muted);
+}
+
+.skill-hint {
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.settings-dialog {
+  width: min(100%, 520px);
+}
+
+.setting-group {
+  margin-top: 24px;
+}
+
+.setting-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.difficulty-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.difficulty-option {
+  display: grid;
+  gap: 4px;
+  padding: 12px 10px;
+  border: 1px solid #c8d5d0;
+  border-radius: 7px;
+  color: var(--ink);
+  background: #ffffff;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.difficulty-option:hover {
+  border-color: var(--teal);
+}
+
+.difficulty-option strong {
+  font-size: 14px;
+}
+
+.difficulty-option span {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.difficulty-option--active {
+  border-color: var(--teal);
+  background: #eaf4f2;
+  box-shadow: inset 0 0 0 1px var(--teal);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #c8d5d0;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.stepper-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  color: var(--teal);
+  background: #eef4f2;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stepper-button:hover:not(:disabled) {
+  background: #e0eeeb;
+}
+
+.stepper-button:disabled {
+  color: #b3bfba;
+  cursor: not-allowed;
+}
+
+.stepper-value {
+  min-width: 38px;
+  color: var(--ink);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.setting-note {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.setting-alert {
+  margin: 22px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(201, 138, 20, 0.42);
+  border-radius: 7px;
+  color: #8a5f10;
+  background: #fdf6e6;
+  font-size: 12px;
+}
+
+.setting-error {
+  margin: 12px 0 0;
+  color: #a4473a;
+  font-size: 12px;
 }
 
 .modal-backdrop {
@@ -593,6 +845,16 @@ h1 {
     min-height: 0;
     padding: 16px;
   }
+
+  .skill-area {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .skill-card {
+    min-width: 0;
+  }
 }
 
 @media (max-width: 390px) {
@@ -627,5 +889,9 @@ h1 {
     border-right: 0;
     border-left: 0;
     border-radius: 0;
+  }
+
+  .difficulty-options {
+    grid-template-columns: 1fr;
   }
 }

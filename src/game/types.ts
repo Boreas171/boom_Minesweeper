@@ -20,6 +20,12 @@ export type Cell = {
   adjacentMines: number
   revealed: boolean
   flagged: boolean
+  /** 被技能探明的地雷，独立于 revealed，不影响踩雷判定 */
+  detected: boolean
 }
 
 export type Board = Cell[][]
+
+export type SkillKey = 'detect-mines'
+
+export type ArmedSkill = SkillKey | null
